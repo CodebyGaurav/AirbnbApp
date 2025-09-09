@@ -1,10 +1,13 @@
 package com.codebygaurav.AirbnbApp.service.impl;
 
 import com.codebygaurav.AirbnbApp.dto.HotelDto;
+import com.codebygaurav.AirbnbApp.dto.HotelInfoDto;
+import com.codebygaurav.AirbnbApp.dto.RoomDto;
 import com.codebygaurav.AirbnbApp.entity.Hotel;
 import com.codebygaurav.AirbnbApp.entity.Room;
 import com.codebygaurav.AirbnbApp.exception.ResourceNotFoundException;
 import com.codebygaurav.AirbnbApp.repository.HotelRepository;
+import com.codebygaurav.AirbnbApp.repository.RoomRepository;
 import com.codebygaurav.AirbnbApp.service.HotelService;
 import com.codebygaurav.AirbnbApp.service.InventoryService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Slf4j
@@ -21,6 +26,7 @@ public class HotelServiceImpl implements HotelService {
     private final HotelRepository hotelRepository;
     private final ModelMapper modelMapper;
     private final InventoryService  inventoryService;
+    private final RoomRepository roomRepository;
 
     public HotelDto createNewHotel(HotelDto hotelDto){
         log.info("creating a new hotel with name:{}",hotelDto.getName());
@@ -58,11 +64,14 @@ public class HotelServiceImpl implements HotelService {
         Hotel hotel = hotelRepository
                 .findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Hotel not found with ID:"+id));
-        hotelRepository.deleteById(id);
+
         //TODO: delete the future inventories for this hotel
         for(Room room : hotel.getRooms()){
-            inventoryService.deleteFutureInventories(room);
-        }    }
+            inventoryService.deleteAllInventories(room);
+            roomRepository.deleteById(room.getId());
+        }
+        hotelRepository.deleteById(id);
+    }
 
     @Override
     @Transactional
@@ -78,6 +87,20 @@ public class HotelServiceImpl implements HotelService {
             inventoryService.initializeRoomForAYear(room);
         }
 
+    }
+
+    @Override
+    public HotelInfoDto getHotelInfoById(Long hotelId) {
+        Hotel hotel = hotelRepository
+                .findById(hotelId)
+                .orElseThrow(()->new ResourceNotFoundException("Hotel not found with ID:"+hotelId));
+
+        List<RoomDto> rooms = hotel.getRooms()
+                .stream()
+                .map(element -> modelMapper.map(element,RoomDto.class))
+                .toList();
+
+        return new HotelInfoDto(modelMapper.map(hotel, HotelDto.class), rooms);
     }
 
 }
