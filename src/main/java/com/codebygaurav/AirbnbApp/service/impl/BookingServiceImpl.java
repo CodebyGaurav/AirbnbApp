@@ -6,11 +6,13 @@ import com.codebygaurav.AirbnbApp.dto.GuestDto;
 import com.codebygaurav.AirbnbApp.entity.*;
 import com.codebygaurav.AirbnbApp.entity.enums.BookingStatus;
 import com.codebygaurav.AirbnbApp.exception.ResourceNotFoundException;
+import com.codebygaurav.AirbnbApp.exception.UnAuthorisedException;
 import com.codebygaurav.AirbnbApp.repository.*;
 import com.codebygaurav.AirbnbApp.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,8 +67,6 @@ public class BookingServiceImpl implements BookingService {
         inventoryRepository.saveAll(inventoryList);
 
         //create the booking
-
-
         //TODO: calculate dynamic amount
 
         Booking booking = Booking.builder()
@@ -90,6 +90,11 @@ public class BookingServiceImpl implements BookingService {
         log.info("Adding guests for booking with id : {}", bookingId);
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(()->
                 new ResourceNotFoundException("Booking not found with id :"+bookingId));
+        User user = getCurrentUser();
+
+        if (!user.equals(booking.getUser())) {
+            throw new UnAuthorisedException("Booking doesn't belong to this user with id: "+user.getId());
+        }
 
         if (hasBookingExpired(booking)) {
             throw new IllegalStateException("Booking has already expired");
@@ -100,7 +105,7 @@ public class BookingServiceImpl implements BookingService {
         }
         for(GuestDto guestDto : guestDtoList){
             Guest guest = modelMapper.map(guestDto, Guest.class);
-            guest.setUser(getCurrentUser());
+            guest.setUser(user);
             guest = guestRepository.save(guest);
             booking.getGuests().add(guest);
 
@@ -115,8 +120,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     public User getCurrentUser(){
-        User user = new User();
-        user.setId(1L); //TODO: REMOVE dummy user
-        return user;
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }

@@ -43,10 +43,10 @@ public class Hotel {
     @Embedded
     private HotelContactInfo contactInfo;
 
-    @OneToMany(mappedBy = "hotel", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "hotel")
     @JsonIgnore
     private List<Room> rooms;
 
-    @ManyToOne
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private User owner;
 }
