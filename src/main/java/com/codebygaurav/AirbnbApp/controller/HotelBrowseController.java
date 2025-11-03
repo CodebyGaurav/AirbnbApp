@@ -2,6 +2,7 @@ package com.codebygaurav.AirbnbApp.controller;
 
 import com.codebygaurav.AirbnbApp.dto.HotelDto;
 import com.codebygaurav.AirbnbApp.dto.HotelInfoDto;
+import com.codebygaurav.AirbnbApp.dto.HotelPriceDto;
 import com.codebygaurav.AirbnbApp.dto.HotelSearchRequest;
 import com.codebygaurav.AirbnbApp.service.HotelService;
 import com.codebygaurav.AirbnbApp.service.InventoryService;
@@ -9,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/hotels")
@@ -21,9 +20,9 @@ public class HotelBrowseController {
     private final HotelService hotelService;
 
     @GetMapping("/search")
-    public ResponseEntity<Page<HotelDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest){
+    public ResponseEntity<Page<HotelPriceDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest){
 
-        Page<HotelDto> page = inventoryService.searchHotels(hotelSearchRequest);
+        var page = inventoryService.searchHotels(hotelSearchRequest);
         return  ResponseEntity.ok(page);
     }
 
